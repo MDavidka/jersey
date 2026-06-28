@@ -1,39 +1,41 @@
 "use client"
 
 import React, { useState } from 'react'
-import { useCloudStore } from '@/lib/store'
+import { useCloudStore, Server } from '@/lib/store'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { 
   CreditCard, DollarSign, Download, Plus, CheckCircle2, 
-  Calendar, FileText, AlertCircle, Sparkles, TrendingUp
+  Calendar, FileText, AlertCircle, Sparkles, TrendingUp, RefreshCw
 } from 'lucide-react'
 
 export default function BillingPage() {
-  const { user, invoices, addFunds } = useCloudStore()
+  const { user, invoices, addFunds, servers } = useCloudStore()
   const [topUpAmount, setTopUpAmount] = useState('25')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   
-  // Calculate total monthly burn rate
-  const { servers } = useCloudStore()
-  const monthlyBurn = parseFloat(servers.reduce((acc, s) => acc + s.cost, 0).toFixed(2))
+  // Calculate total monthly burn rate with explicit types
+  const monthlyBurn = Number.parseFloat(
+    servers.reduce((acc: number, s: Server) => acc + s.cost, 0).toFixed(2)
+  )
 
   const handleTopUp = (e: React.FormEvent) => {
     e.preventDefault()
-    const amount = parseFloat(topUpAmount)
-    if (isNaN(amount) || amount <= 0) return
+    const amount = Number.parseFloat(topUpAmount)
+    if (Number.isNaN(amount) || amount <= 0) return
     addFunds(amount)
     setTopUpAmount('25')
   }
 
   const simulateDownload = (id: string) => {
     setDownloadingId(id)
-    setTimeout(() => {
+    window.setTimeout(() => {
       setDownloadingId(null)
-      // Simulate file download by creating a mock alert
-      alert(`Invoice ${id} downloaded successfully as PDF.`)
+      if (typeof window !== 'undefined') {
+        window.alert(`Invoice ${id} downloaded successfully as PDF.`)
+      }
     }, 1200)
   }
 
