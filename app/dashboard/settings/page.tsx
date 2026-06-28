@@ -2,17 +2,30 @@
 
 import React, { useState } from 'react'
 import { useCloudStore } from '@/lib/store'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Key, Eye, EyeOff, RefreshCw, Check, ShieldAlert, Globe, Server } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { 
+  Settings, Key, Eye, EyeOff, Copy, Check, 
+  User, Shield, Globe, RefreshCw, Terminal
+} from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, regenerateApiKey } = useCloudStore()
   const [showKey, setShowKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+
+  // Profile inputs (dummy)
+  const [profileName, setProfileName] = useState(user?.name || '')
+  const [profileEmail, setProfileEmail] = useState(user?.email || '')
+  
+  // Toggles
+  const [mfa, setMfa] = useState(true)
+  const [apiAccess, setApiAccess] = useState(true)
+  const [emailAlerts, setEmailAlerts] = useState(false)
 
   const handleCopyKey = () => {
     if (!user) return
@@ -31,154 +44,153 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Developer Configuration</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Manage your workspace API access keys, region preferences, and system preferences.</p>
+      {/* HEADER */}
+      <div className="border-b border-border/40 pb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Developer Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Configure profile details, manage security preferences, and generate API credentials.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Side: API Keys */}
+        {/* PROFILE & SECURITY */}
         <div className="lg:col-span-7 space-y-6">
-          <Card className="bg-card/40 border-border/40">
-            <CardHeader>
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Key className="h-5 w-5 text-purple-400" />
-                REST API Credentials
-              </CardTitle>
-              <CardDescription className="text-xs">Authenticate your Terraform, Ansible, or custom CLI scripts with AetherCloud</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              
-              {/* API Key Input display */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Live API Key</label>
-                <div className="flex gap-3">
+          {/* Profile Card */}
+          <Card className="p-6 bg-card/40 border border-border/60">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-4 mb-6">
+              <User className="h-4.5 w-4.5 text-purple-400" />
+              <h3 className="font-bold text-foreground text-sm sm:text-base">Sandbox Profile</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Full Name</label>
+                <Input 
+                  type="text" 
+                  value={profileName} 
+                  onChange={(e) => setProfileName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Email Address</label>
+                <Input 
+                  type="email" 
+                  value={profileEmail} 
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button variant="outline" size="sm" className="border-border hover:bg-card/50 text-xs font-semibold">
+                Save Profile Changes
+              </Button>
+            </div>
+          </Card>
+
+          {/* Security Card */}
+          <Card className="p-6 bg-card/40 border border-border/60">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-4 mb-6">
+              <Shield className="h-4.5 w-4.5 text-purple-400" />
+              <h3 className="font-bold text-foreground text-sm sm:text-base">Security & Authentication</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border/40">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">Multi-Factor Authentication (MFA)</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Require an OTP token alongside your password.</p>
+                </div>
+                <Switch checked={mfa} onCheckedChange={setMfa} />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border/40">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">REST API Gateway Access</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Enable programatic operations via live credentials.</p>
+                </div>
+                <Switch checked={apiAccess} onCheckedChange={setApiAccess} />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border/40">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">Email Telemetry Alerts</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Receive digests when CPU load exceeds 90% SLA.</p>
+                </div>
+                <Switch checked={emailAlerts} onCheckedChange={setEmailAlerts} />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* API CREDENTIALS */}
+        <div className="lg:col-span-5 space-y-6">
+          <Card className="p-6 bg-card/40 border border-border/60 flex flex-col justify-between h-full">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-border/40 pb-4">
+                <Key className="h-4.5 w-4.5 text-purple-400" />
+                <h3 className="font-bold text-foreground text-sm sm:text-base">API Credentials</h3>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Authenticate automation scripts, Terraform providers, or command-line clients. Keep this key strictly confidential.
+              </p>
+
+              {/* API Key Input */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Active Live Token</label>
+                <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <input
-                      type={showKey ? 'text' : 'password'}
-                      value={user?.apiKey || ''}
-                      readOnly
-                      className="w-full h-9 bg-background/50 border border-input rounded-md px-3 py-1 text-xs font-mono text-purple-300 focus:outline-none focus:ring-1 focus:ring-ring"
+                    <Input 
+                      type={showKey ? 'text' : 'password'} 
+                      value={user?.apiKey || ''} 
+                      readOnly 
+                      className="font-mono text-xs pr-9 bg-black/30 border-border"
                     />
                     <button
                       type="button"
                       onClick={() => setShowKey(!showKey)}
-                      className="absolute right-3 top-2.5 text-muted-foreground hover:text-white"
+                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground focus:outline-none"
                     >
                       {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   <Button 
+                    type="button" 
                     variant="outline" 
-                    size="sm" 
                     onClick={handleCopyKey}
-                    className="border-border/60 text-xs font-semibold"
+                    title="Copy Key"
+                    className="border-border hover:bg-card/50"
                   >
-                    {copied ? (
-                      <span className="flex items-center gap-1 text-emerald-400">
-                        <Check className="h-3.5 w-3.5" />
-                        Copied
-                      </span>
-                    ) : (
-                      'Copy Key'
-                    )}
+                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              {/* Regenerate Trigger */}
-              <div className="p-4 bg-purple-950/10 border border-purple-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                    <ShieldAlert className="h-4 w-4" />
-                    Regenerate Credentials
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Instantly invalidate the current key and generate a new one. Any active scripts using the old key will fail immediately.
-                  </p>
-                </div>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={handleRegenerate}
-                  disabled={regenerating}
-                  className="w-full sm:w-auto text-xs shrink-0"
-                >
-                  {regenerating ? (
-                    <>
-                      <RefreshCw className="h-3 w-3 animate-spin mr-1.5" />
-                      Regenerating...
-                    </>
-                  ) : (
-                    'Regenerate'
-                  )}
-                </Button>
-              </div>
+              {copied && (
+                <span className="text-[10px] font-mono text-emerald-400 font-semibold block text-right">
+                  Copied live credential!
+                </span>
+              )}
+            </div>
 
-            </CardContent>
-          </Card>
-
-          {/* Region preferences */}
-          <Card className="bg-card/40 border-border/40">
-            <CardHeader>
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-400" />
-                Default Deployment Preferences
-              </CardTitle>
-              <CardDescription className="text-xs">Pre-configure resources for rapid server deployments</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Default Region</label>
-                  <select className="w-full bg-background/50 border border-input rounded-md p-2 text-xs focus:outline-none">
-                    <option value="us-east">us-east (N. Virginia)</option>
-                    <option value="eu-west">eu-west (Frankfurt)</option>
-                    <option value="ap-southeast">ap-southeast (Singapore)</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase">Default OS Image</label>
-                  <select className="w-full bg-background/50 border border-input rounded-md p-2 text-xs focus:outline-none">
-                    <option value="ubuntu">Ubuntu 22.04 LTS</option>
-                    <option value="debian">Debian 12 Bookworm</option>
-                    <option value="windows">Windows Server 2022</option>
-                  </select>
-                </div>
-              </div>
-            </CardContent>
+            <div className="space-y-3 pt-6 border-t border-border/40 mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleRegenerate}
+                disabled={regenerating}
+                className="w-full gap-2 border-border hover:bg-card/50 text-xs font-semibold"
+              >
+                <RefreshCw className={`h-4.5 w-4.5 ${regenerating ? 'animate-spin' : ''}`} />
+                {regenerating ? 'Revoking & Generating...' : 'Regenerate API Key'}
+              </Button>
+              <p className="text-[9px] text-muted-foreground text-center leading-normal">
+                Regenerating will instantly revoke the existing key. Any active CI/CD scripts using the old key will fail.
+              </p>
+            </div>
           </Card>
         </div>
-
-        {/* Right Side: Profile summary */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card className="bg-card/40 border-border/40">
-            <CardHeader>
-              <CardTitle className="text-base font-bold">Profile Details</CardTitle>
-              <CardDescription className="text-xs">Your workspace security metadata</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-xs sm:text-sm">
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Primary Owner</span>
-                <span className="text-white font-semibold">{user?.name}</span>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Security Email</span>
-                <span className="text-white font-semibold">{user?.email}</span>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Two-Factor Auth</span>
-                <Badge variant="success">Enabled (SMS/TOTP)</Badge>
-              </div>
-              <div className="flex justify-between pb-1">
-                <span className="text-muted-foreground">Console Access</span>
-                <span className="text-emerald-400 font-semibold font-mono">SSH Root Key Sync</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
       </div>
     </div>
   )

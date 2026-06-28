@@ -2,182 +2,157 @@
 
 import React, { useState } from 'react'
 import { useCloudStore } from '@/lib/store'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Wallet, CreditCard, Plus, ArrowUpRight, History, CheckCircle2, RefreshCw } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { 
+  CreditCard, DollarSign, Download, Plus, CheckCircle2, 
+  Calendar, FileText, AlertCircle, Sparkles, TrendingUp
+} from 'lucide-react'
 
 export default function BillingPage() {
   const { user, invoices, addFunds } = useCloudStore()
-  const [selectedAmount, setSelectedAmount] = useState<number>(50)
-  const [addingFunds, setAddingFunds] = useState(false)
-  const [successMsg, setSuccessMsg] = useState(false)
+  const [topUpAmount, setTopUpAmount] = useState('25')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  
+  // Calculate total monthly burn rate
+  const { servers } = useCloudStore()
+  const monthlyBurn = parseFloat(servers.reduce((acc, s) => acc + s.cost, 0).toFixed(2))
 
-  const handleAddFunds = () => {
-    setAddingFunds(true)
+  const handleTopUp = (e: React.FormEvent) => {
+    e.preventDefault()
+    const amount = parseFloat(topUpAmount)
+    if (isNaN(amount) || amount <= 0) return
+    addFunds(amount)
+    setTopUpAmount('25')
+  }
+
+  const simulateDownload = (id: string) => {
+    setDownloadingId(id)
     setTimeout(() => {
-      addFunds(selectedAmount)
-      setAddingFunds(false)
-      setSuccessMsg(true)
-      setTimeout(() => setSuccessMsg(false), 3000)
+      setDownloadingId(null)
+      // Simulate file download by creating a mock alert
+      alert(`Invoice ${id} downloaded successfully as PDF.`)
     }, 1200)
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Billing & Ledger</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Manage your account funds, view invoices, and configure automated compute statements.</p>
+      {/* HEADER */}
+      <div className="border-b border-border/40 pb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Billing & Invoices</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage your sandbox trial credits, active burn rate, and download past receipts.
+        </p>
       </div>
 
-      {/* Top Ledger Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left: Wallet Balance & Add Funds */}
-        <Card className="lg:col-span-7 bg-card/40 border-border/40">
-          <CardHeader>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-purple-400" />
-              Prepaid Account Balance
-            </CardTitle>
-            <CardDescription className="text-xs">Your virtual server resources are billed hourly against this wallet</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            
-            {/* Balance display */}
-            <div className="p-6 bg-purple-950/20 border border-purple-500/20 rounded-xl flex items-center justify-between">
-              <div>
-                <span className="text-xs text-purple-300 uppercase font-semibold">Available Funds</span>
-                <div className="text-4xl font-extrabold text-white font-mono mt-1">${user?.balance.toFixed(2)}</div>
-                <span className="text-[10px] text-muted-foreground">Billed hourly based on active nodes</span>
+      {/* OVERVIEW CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Balance */}
+        <Card className="p-6 bg-card/40 border border-border/60 flex flex-col justify-between">
+          <div className="space-y-2">
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Available Sandbox Balance</span>
+            <div className="text-4xl font-extrabold text-emerald-400 font-mono">${user?.balance.toFixed(2)}</div>
+          </div>
+          <div className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 rounded-lg w-fit">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <span>Credits active | Never expires</span>
+          </div>
+        </Card>
+
+        {/* Burn Rate */}
+        <Card className="p-6 bg-card/40 border border-border/60 flex flex-col justify-between">
+          <div className="space-y-2">
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Estimated Monthly Burn</span>
+            <div className="text-4xl font-extrabold text-foreground font-mono">${monthlyBurn.toFixed(2)}</div>
+          </div>
+          <div className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg w-fit">
+            <TrendingUp className="h-4 w-4 text-purple-400" />
+            <span>${(monthlyBurn / 720).toFixed(4)} / hour cluster cost</span>
+          </div>
+        </Card>
+
+        {/* Top Up Credits Form */}
+        <Card className="p-6 bg-card/40 border border-border/60">
+          <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-3">Add Sandbox Credits</span>
+          <form onSubmit={handleTopUp} className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-2.5 text-xs text-muted-foreground font-semibold font-mono">$</span>
+                <Input 
+                  type="number" 
+                  min="5" 
+                  max="1000" 
+                  value={topUpAmount} 
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  className="pl-7 h-9 font-mono text-xs"
+                />
               </div>
-              <Badge variant="success" className="text-xs px-3 py-1">Active</Badge>
-            </div>
-
-            {/* Simulated Add Funds form */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Top Up Wallet (Sandbox Simulation)</h4>
-              
-              {successMsg && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Successfully added ${selectedAmount.toFixed(2)} to your balance!
-                </div>
-              )}
-
-              <div className="grid grid-cols-4 gap-3">
-                {[10, 25, 50, 100].map((amt) => (
-                  <button
-                    key={amt}
-                    type="button"
-                    onClick={() => setSelectedAmount(amt)}
-                    className={`py-3 rounded-lg border text-sm font-semibold font-mono transition-all ${
-                      selectedAmount === amt
-                        ? 'border-purple-500 bg-purple-500/15 text-white'
-                        : 'border-border/60 hover:bg-muted/30 text-muted-foreground'
-                    }`}
-                  >
-                    ${amt}
-                  </button>
-                ))}
-              </div>
-
-              <Button 
-                onClick={handleAddFunds} 
-                disabled={addingFunds}
-                variant="glow" 
-                className="w-full gap-2"
-              >
-                {addingFunds ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Processing Sandbox Payment...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="h-4 w-4" />
-                    Simulate Payment of ${selectedAmount.toFixed(2)}
-                  </>
-                )}
+              <Button type="submit" variant="glow" size="sm" className="gap-1 px-4">
+                <Plus className="h-4 w-4" />
+                Add Credits
               </Button>
             </div>
-
-          </CardContent>
+            <p className="text-[10px] text-muted-foreground leading-normal">
+              Enter any amount between $5 and $1000. Simulated trial credits will be added to your balance instantly.
+            </p>
+          </form>
         </Card>
-
-        {/* Right: Plan details & details */}
-        <Card className="lg:col-span-5 bg-card/40 border-border/40 flex flex-col justify-between">
-          <CardHeader>
-            <CardTitle className="text-base font-bold">Active Account Profile</CardTitle>
-            <CardDescription className="text-xs">Your current platform classification and limits</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 flex-1">
-            <div className="space-y-3.5 text-sm">
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Account Classification</span>
-                <strong className="text-white">{user?.activePlan}</strong>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Virtual Core Limit</span>
-                <strong className="text-white">64 vCPU Cores</strong>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-2.5">
-                <span className="text-muted-foreground">Network Bandwidth Cap</span>
-                <strong className="text-white">50 TB / mo</strong>
-              </div>
-              <div className="flex justify-between pb-1.5">
-                <span className="text-muted-foreground">Payment Method</span>
-                <span className="flex items-center gap-1.5 text-white">
-                  <CreditCard className="h-4 w-4 text-purple-400" />
-                  •••• 4242 (Simulated)
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-muted/20 border border-border/40 rounded-xl text-xs text-muted-foreground leading-relaxed mt-4">
-              ℹ <strong>Hourly Billing Notice</strong>: Active virtual servers are computed hourly. To stop incurring charges, please terminate or stop the server instance from the Servers & Panel tab.
-            </div>
-          </CardContent>
-        </Card>
-
       </div>
 
-      {/* Invoice History Table */}
-      <Card className="bg-card/40 border-border/40">
-        <CardHeader>
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <History className="h-5 w-5 text-purple-400" />
-            Invoice Ledger
-          </CardTitle>
-          <CardDescription className="text-xs">Historical statements and payment records</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* INVOICES LIST */}
+        <Card className="lg:col-span-8 p-6 bg-card/40 border border-border/60">
+          <div className="flex items-center gap-2 border-b border-border/40 pb-4 mb-6">
+            <FileText className="h-4.5 w-4.5 text-purple-400" />
+            <h3 className="font-bold text-foreground text-sm sm:text-base">Past Invoices & Receipts</h3>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+            <table className="w-full text-sm text-left font-mono">
               <thead>
-                <tr className="border-b border-border/40 bg-muted/20 text-muted-foreground text-xs uppercase tracking-wider font-semibold">
-                  <th className="p-4">Invoice ID</th>
-                  <th className="p-4">Billing Date</th>
-                  <th className="p-4">Amount Charged</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Receipt</th>
+                <tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="py-3 px-4 font-semibold">Invoice ID</th>
+                  <th className="py-3 px-4 font-semibold">Billing Date</th>
+                  <th className="py-3 px-4 font-semibold">Amount</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  <th className="py-3 px-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/40 text-muted-foreground">
+              <tbody className="divide-y divide-border/40">
                 {invoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-muted/10 transition-colors">
-                    <td className="p-4 font-mono font-bold text-white">{inv.id}</td>
-                    <td className="p-4">{inv.date}</td>
-                    <td className="p-4 font-mono text-white">${inv.amount.toFixed(2)}</td>
-                    <td className="p-4">
-                      <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>
+                  <tr key={inv.id} className="hover:bg-card/20 transition-colors">
+                    <td className="py-3.5 px-4 font-semibold text-foreground">{inv.id}</td>
+                    <td className="py-3.5 px-4 text-muted-foreground text-xs flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {inv.date}
+                    </td>
+                    <td className="py-3.5 px-4 text-foreground font-bold">${inv.amount.toFixed(2)}</td>
+                    <td className="py-3.5 px-4">
+                      <Badge variant={inv.status === 'paid' ? 'success' : 'warning'} className="text-[10px] uppercase font-bold">
                         {inv.status}
                       </Badge>
                     </td>
-                    <td className="p-4 text-right">
-                      <Button variant="link" className="text-xs text-purple-400 hover:text-purple-300 h-auto p-0">
-                        View Statement
-                        <ArrowUpRight className="h-3 w-3 ml-1" />
+                    <td className="py-3.5 px-4 text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => simulateDownload(inv.id)}
+                        disabled={downloadingId === inv.id}
+                        className="h-8 border-border hover:bg-card/60 gap-1.5 text-xs font-semibold"
+                      >
+                        {downloadingId === inv.id ? (
+                          <>
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                            <span>PDF...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-3 w-3" />
+                            <span>PDF</span>
+                          </>
+                        )}
                       </Button>
                     </td>
                   </tr>
@@ -185,8 +160,47 @@ export default function BillingPage() {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+
+        {/* PAYMENT METHOD */}
+        <Card className="lg:col-span-4 p-6 bg-card/40 border border-border/60 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-4">
+              <CreditCard className="h-4.5 w-4.5 text-purple-400" />
+              <h3 className="font-bold text-foreground text-sm sm:text-base">Payment Method</h3>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-900/40 via-blue-900/30 to-black border border-purple-500/20 rounded-xl p-5 relative overflow-hidden text-white h-44 flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-md border border-white/15">
+                  <Sparkles className="h-3.5 w-3.5 text-yellow-400 animate-pulse" />
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold font-mono">Sandbox Visa</span>
+                </div>
+                <span className="text-xs font-mono font-bold tracking-widest text-white/50">AETHER CLOUD</span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-base font-mono font-bold tracking-widest">•••• •••• •••• 4112</div>
+                <div className="flex justify-between items-center text-[10px] text-white/60 font-mono">
+                  <span>HOLDER: {user?.name.toUpperCase()}</span>
+                  <span>EXP: 12/28</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex gap-2.5 text-xs text-amber-400 mt-4">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p>This is a simulated cloud environment. Real credit cards are not required and no real billing occurs.</p>
+            </div>
+          </div>
+
+          <Button variant="outline" className="w-full mt-6 border-border hover:bg-card/50 text-xs font-semibold">
+            Update Payment Details
+          </Button>
+        </Card>
+      </div>
     </div>
   )
 }

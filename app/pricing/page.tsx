@@ -1,265 +1,335 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Check, Info, HelpCircle, Cpu, Database, HardDrive, Shield, Zap } from 'lucide-react'
 import Link from 'next/link'
-import { useCloudStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
+import { useCloudStore } from '@/lib/store'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Check, Cpu, Database, HardDrive, Shield, Zap, Globe, ArrowRight } from 'lucide-react'
 
 export default function PricingPage() {
   const router = useRouter()
-  const { user, addServer } = useCloudStore()
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly')
+  const { addServer, user } = useCloudStore()
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
-  const plans = [
+  const discountFactor = billingCycle === 'yearly' ? 0.8 : 1.0
+
+  const vpsPlans = [
     {
-      name: 'Developer Starter',
-      badge: 'Popular',
-      type: 'VPS',
+      name: 'Aether Starter',
+      cpu: 1,
+      ram: 2,
+      storage: 40,
+      bandwidth: '2 TB',
+      price: 10,
+      popular: false,
+      color: 'border-border'
+    },
+    {
+      name: 'Aether Developer',
       cpu: 2,
       ram: 4,
       storage: 80,
-      monthlyCost: 15,
-      features: [
-        '2 vCPU AMD EPYC™ Cores',
-        '4 GB DDR5 ECC Memory',
-        '80 GB Enterprise NVMe SSD',
-        '3 TB Transferred Bandwidth',
-        '1 Gbps Port Speed',
-        '1 IP Address included',
-        'Basic DDoS Protection'
-      ]
+      bandwidth: '5 TB',
+      price: 20,
+      popular: true,
+      color: 'border-purple-500/50 shadow-purple-500/10'
     },
     {
-      name: 'Production Pro',
-      badge: 'Best Value',
-      type: 'VPS',
+      name: 'Aether Production',
       cpu: 4,
       ram: 8,
       storage: 160,
-      monthlyCost: 35,
-      features: [
-        '4 vCPU AMD EPYC™ Cores',
-        '8 GB DDR5 ECC Memory',
-        '160 GB Enterprise NVMe SSD',
-        '6 TB Transferred Bandwidth',
-        '5 Gbps Port Speed',
-        '2 IP Addresses included',
-        'Advanced DDoS Shield (12 Tbps)',
-        'Daily Automatic Snapshots'
-      ]
+      bandwidth: '10 TB',
+      price: 40,
+      popular: false,
+      color: 'border-border'
     },
     {
-      name: 'Enterprise Ultra',
-      badge: 'Top Tier',
-      type: 'VPS',
+      name: 'Aether Enterprise',
       cpu: 8,
       ram: 16,
       storage: 320,
-      monthlyCost: 75,
-      features: [
-        '8 vCPU AMD EPYC™ Cores',
-        '16 GB DDR5 ECC Memory',
-        '320 GB Enterprise NVMe SSD',
-        '10 TB Transferred Bandwidth',
-        '10 Gbps Port Speed',
-        '4 IP Addresses included',
-        'Advanced DDoS Shield (12 Tbps)',
-        'Hourly Automatic Snapshots',
-        'Dedicated SLA Agreement'
-      ]
+      bandwidth: '20 TB',
+      price: 80,
+      popular: false,
+      color: 'border-border'
     }
   ]
 
-  const handleSelectPlan = (plan: typeof plans[0]) => {
-    const cost = billingPeriod === 'yearly' ? Math.round(plan.monthlyCost * 0.8) : plan.monthlyCost
-    // Add server to store
+  const bareMetalPlans = [
+    {
+      name: 'Titan Core-16',
+      cpu: 16,
+      ram: 64,
+      storage: 1000,
+      bandwidth: '100 TB',
+      price: 180,
+      popular: false,
+      color: 'border-border'
+    },
+    {
+      name: 'Titan Core-32 (GPU)',
+      cpu: 32,
+      ram: 128,
+      storage: 2000,
+      bandwidth: 'Uncapped',
+      price: 360,
+      popular: true,
+      color: 'border-blue-500/50 shadow-blue-500/10'
+    }
+  ]
+
+  const handleDeployPlan = (plan: typeof vpsPlans[0], type: 'VPS' | 'Bare Metal') => {
+    const finalPrice = Math.round(plan.price * discountFactor)
     addServer({
       name: plan.name.toLowerCase().replace(/\s+/g, '-'),
       region: 'us-east (N. Virginia)',
-      type: 'VPS',
+      type,
       cpu: plan.cpu,
       ram: plan.ram,
       storage: plan.storage,
-      cost,
+      cost: finalPrice,
       os: 'Ubuntu 22.04 LTS'
     })
 
-    // Redirect to dashboard or login
     if (user?.isLoggedIn) {
-      router.push('/dashboard')
+      router.push('/dashboard/servers')
     } else {
-      router.push('/login?redirect=/dashboard')
+      router.push('/login?redirect=/dashboard/servers')
     }
   }
 
   return (
-    <div className="min-h-screen bg-background py-16 sm:py-24 relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-[140px] pointer-events-none" />
+    <div className="relative py-16 md:py-24 bg-background overflow-hidden">
+      {/* Glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
 
-      <div className="container px-4 mx-auto sm:px-6 relative z-10 space-y-16">
-        
+      <div className="container px-4 mx-auto sm:px-6 relative z-10">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <Badge variant="outline" className="border-purple-500/30 bg-purple-500/10 text-purple-300">
-            Simple Billing
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            Predictable pricing.<br />
-            <span className="bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-              No hidden fees.
-            </span>
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">
+            Transparent, Predictable <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-500 bg-clip-text text-transparent">Pricing</span>
           </h1>
-          <p className="text-muted-foreground text-base">
-            Deploy servers with transparent billing. Upgrade, downgrade, or terminate instances at any time. Pay only for what you use.
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            No hidden fees, no complex usage calculators. Pay for what you configure. Get 20% off when billing annually.
           </p>
 
-          {/* Billing Period Toggle */}
-          <div className="flex items-center justify-center gap-3 pt-6">
-            <span className={`text-sm ${billingPeriod === 'monthly' ? 'text-white font-semibold' : 'text-muted-foreground'}`}>Monthly Billing</span>
+          {/* Billing Cycle Toggle */}
+          <div className="flex items-center justify-center gap-3 mt-8">
+            <span className={`text-sm ${billingCycle === 'monthly' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Billing Monthly</span>
             <button
-              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-              className="w-12 h-6 bg-purple-950 border border-purple-500/30 rounded-full p-0.5 transition-colors relative flex items-center"
+              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-purple-600/20 border border-purple-500/30 transition-colors"
             >
-              <div className={`w-4 h-4 bg-purple-400 rounded-full transition-transform ${billingPeriod === 'yearly' ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-purple-500 transition-transform ${
+                  billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
             </button>
-            <span className={`text-sm flex items-center gap-1.5 ${billingPeriod === 'yearly' ? 'text-white font-semibold' : 'text-muted-foreground'}`}>
-              Yearly Billing
-              <Badge variant="success" className="text-[10px] py-0 px-2">Save 20%</Badge>
+            <span className={`text-sm flex items-center gap-1.5 ${billingCycle === 'yearly' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
+              Billing Annually
+              <Badge variant="success" className="text-[10px] px-2 py-0">Save 20%</Badge>
             </span>
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => {
-            const cost = billingPeriod === 'yearly' ? Math.round(plan.monthlyCost * 0.8) : plan.monthlyCost
-            const isBestValue = plan.badge === 'Best Value'
+        {/* 1. VPS PLANS */}
+        <div className="space-y-6 mb-20">
+          <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+            <Cpu className="h-5 w-5 text-purple-400" />
+            <h2 className="text-2xl font-bold text-foreground">Standard VPS Instances</h2>
+            <Badge variant="secondary">NVMe Raid-10 Included</Badge>
+          </div>
 
-            return (
-              <Card 
-                key={plan.name} 
-                className={`bg-card/40 border-border/40 relative ${
-                  isBestValue ? 'border-purple-500/50 shadow-purple-500/10 shadow-xl' : ''
-                }`}
-              >
-                {isBestValue && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-purple-600 text-white font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider">
-                    Best Value
-                  </div>
-                )}
-                <CardContent className="p-6 sm:p-8 space-y-6">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                    <p className="text-xs text-muted-foreground">High performance AMD EPYC Virtual Server</p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {vpsPlans.map((plan) => {
+              const currentPrice = Math.round(plan.price * discountFactor)
+              return (
+                <Card key={plan.name} className={`flex flex-col justify-between p-6 bg-card/40 border hover:border-purple-500/30 transition-all duration-300 relative ${plan.color}`}>
+                  {plan.popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase bg-purple-600 text-white px-3 py-1 rounded-full border border-purple-400">
+                      Most Popular
+                    </span>
+                  )}
 
-                  <div className="flex items-baseline gap-1 border-b border-border/40 pb-6">
-                    <span className="text-4xl font-extrabold text-white font-mono">${cost}</span>
-                    <span className="text-muted-foreground text-sm">/ month</span>
-                  </div>
-
-                  {/* Hardware Summary */}
-                  <div className="grid grid-cols-3 gap-2 py-3 bg-muted/20 rounded-lg border border-border/40 text-center">
-                    <div className="space-y-0.5">
-                      <div className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                        <Cpu className="h-3 w-3 text-purple-400" /> CPU
-                      </div>
-                      <div className="text-xs font-bold font-mono">{plan.cpu} Cores</div>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">High-performance dev node</p>
                     </div>
-                    <div className="space-y-0.5 border-x border-border/40">
-                      <div className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                        <Database className="h-3 w-3 text-blue-400" /> RAM
-                      </div>
-                      <div className="text-xs font-bold font-mono">{plan.ram} GB</div>
+
+                    <div className="flex items-baseline gap-1 py-2">
+                      <span className="text-4xl font-extrabold text-foreground">${currentPrice}</span>
+                      <span className="text-muted-foreground text-xs">/ mo</span>
                     </div>
-                    <div className="space-y-0.5">
-                      <div className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                        <HardDrive className="h-3 w-3 text-emerald-400" /> Disk
+
+                    <div className="space-y-2.5 pt-4 border-t border-border/40 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground text-xs">CPU Cores</span>
+                        <span className="font-mono text-xs font-semibold">{plan.cpu} vCPUs</span>
                       </div>
-                      <div className="text-xs font-bold font-mono">{plan.storage} GB</div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground text-xs">ECC RAM</span>
+                        <span className="font-mono text-xs font-semibold">{plan.ram} GB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground text-xs">NVMe Storage</span>
+                        <span className="font-mono text-xs font-semibold">{plan.storage} GB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground text-xs">Bandwidth</span>
+                        <span className="font-mono text-xs font-semibold">{plan.bandwidth}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Features List */}
-                  <ul className="space-y-3 text-sm text-muted-foreground">
-                    {plan.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-2.5">
-                        <Check className="h-4 w-4 text-purple-400 shrink-0" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button 
-                    variant={isBestValue ? 'glow' : 'outline'} 
-                    className="w-full mt-4"
-                    onClick={() => handleSelectPlan(plan)}
+                  <Button
+                    variant={plan.popular ? 'glow' : 'outline'}
+                    className="w-full mt-6 gap-2"
+                    onClick={() => handleDeployPlan(plan, 'VPS')}
                   >
-                    Deploy This Server
+                    Deploy Node
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
-                </CardContent>
-              </Card>
-            )
-          })}
+                </Card>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Feature Comparison Table */}
-        <section className="max-w-5xl mx-auto border border-border/40 rounded-2xl bg-card/20 overflow-hidden">
-          <div className="p-6 border-b border-border/40">
-            <h3 className="text-xl font-bold text-white">Full Feature Matrix</h3>
-            <p className="text-xs text-muted-foreground">Compare hardware features across various classes of servers</p>
+        {/* 2. BARE METAL PLANS */}
+        <div className="space-y-6 mb-20">
+          <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+            <Database className="h-5 w-5 text-blue-400" />
+            <h2 className="text-2xl font-bold text-foreground">Dedicated Bare Metal</h2>
+            <Badge variant="secondary">No Virtualization Overhead</Badge>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border/40 bg-muted/20 text-muted-foreground text-xs uppercase tracking-wider font-semibold">
-                  <th className="p-4 sm:p-5">Feature</th>
-                  <th className="p-4 sm:p-5">Virtual Servers (VPS)</th>
-                  <th className="p-4 sm:p-5">Bare Metal</th>
-                  <th className="p-4 sm:p-5">Serverless Functions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40 text-muted-foreground">
-                <tr>
-                  <td className="p-4 sm:p-5 font-semibold text-white">Hypervisor Isolation</td>
-                  <td className="p-4 sm:p-5">KVM Virtualization</td>
-                  <td className="p-4 sm:p-5">Physical Isolation</td>
-                  <td className="p-4 sm:p-5">gVisor Sandbox</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:p-5 font-semibold text-white">CPU Architecture</td>
-                  <td className="p-4 sm:p-5">AMD EPYC™ Zen 4 Shared</td>
-                  <td className="p-4 sm:p-5">AMD EPYC™ Zen 4 Dedicated</td>
-                  <td className="p-4 sm:p-5">Shared Ephemeral Cores</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:p-5 font-semibold text-white">Storage Fabric</td>
-                  <td className="p-4 sm:p-5">NVMe RAID-10</td>
-                  <td className="p-4 sm:p-5">Direct PCIe Gen4 NVMe</td>
-                  <td className="p-4 sm:p-5">Distributed Cloud Object</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:p-5 font-semibold text-white">Monthly Bandwidth</td>
-                  <td className="p-4 sm:p-5">3 TB to 10 TB</td>
-                  <td className="p-4 sm:p-5">100 TB to Unmetered</td>
-                  <td className="p-4 sm:p-5">Pay per GB transferred</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:p-5 font-semibold text-white">Root SSH Access</td>
-                  <td className="p-4 sm:p-5">Yes (Full root)</td>
-                  <td className="p-4 sm:p-5">Yes (Full root + IPMI)</td>
-                  <td className="p-4 sm:p-5">No (API Deployment)</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {bareMetalPlans.map((plan) => {
+              const currentPrice = Math.round(plan.price * discountFactor)
+              return (
+                <Card key={plan.name} className={`flex flex-col justify-between p-8 bg-card/30 border hover:border-blue-500/30 transition-all duration-300 relative ${plan.color}`}>
+                  {plan.popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase bg-blue-600 text-white px-3 py-1 rounded-full border border-blue-400">
+                      High Performance GPU
+                    </span>
+                  )}
+
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-extrabold text-xl text-foreground">{plan.name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">Dedicated physical silicon core arrays</p>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-extrabold text-foreground">${currentPrice}</span>
+                        <span className="text-muted-foreground text-xs">/ mo</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 border-t border-b border-border/40 py-6 text-sm">
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs block">CPU Configuration</span>
+                        <span className="font-mono text-foreground font-semibold flex items-center gap-1.5">
+                          <Cpu className="h-3.5 w-3.5 text-blue-400" />
+                          {plan.cpu} Cores (AMD EPYC)
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs block">DDR5 RAM</span>
+                        <span className="font-mono text-foreground font-semibold flex items-center gap-1.5">
+                          <Database className="h-3.5 w-3.5 text-blue-400" />
+                          {plan.ram} GB Registered
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs block">Storage Arrays</span>
+                        <span className="font-mono text-foreground font-semibold flex items-center gap-1.5">
+                          <HardDrive className="h-3.5 w-3.5 text-blue-400" />
+                          {plan.storage} GB Enterprise NVMe
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs block">Network Outbound</span>
+                        <span className="font-mono text-foreground font-semibold flex items-center gap-1.5">
+                          <Globe className="h-3.5 w-3.5 text-blue-400" />
+                          {plan.bandwidth}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-foreground">Hardware SLA Features:</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>IPMI Out-of-Band Access</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Dual 10Gbps Uplinks</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Hot-Swappable Drives</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>ECC Error Correction</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant={plan.popular ? 'glow' : 'outline'}
+                    className="w-full mt-8 gap-2 py-5"
+                    onClick={() => handleDeployPlan(plan, 'Bare Metal')}
+                  >
+                    Provision Server Node
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 3. TRUST & FAQ */}
+        <div className="border-t border-border/40 pt-16 max-w-4xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-10">Frequently Asked Questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <h4 className="font-bold text-foreground">How does hourly billing work?</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We track server usage down to the exact second. If you deploy a server and destroy it after 4 hours, you only pay for those 4 hours of active compute time.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-foreground">What happens when I run out of bandwidth?</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We do not charge overages. If you exceed your monthly allocation, your port speed is throttled to 10Mbps. You can buy additional blocks of bandwidth for $2/TB.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-foreground">Can I upload my own custom ISO?</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Absolutely! Our console allows you to mount custom ISOs directly via an HTTP link. You can install any custom OS or kernel you require.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-foreground">Is DDoS protection included in the price?</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Yes, our 1.2 Tbps Anycast DDoS Shield is fully active on all nodes by default with zero configuration required and no extra charge.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
